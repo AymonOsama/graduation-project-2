@@ -1,20 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
-  Outlet
+  Outlet,
+  useLocation // 👈 استيراد useLocation عشان نراقب الصفحة الحالية
 } from 'react-router-dom';
 
-import { Toaster } from 'react-hot-toast';
-
+import toast, { Toaster } from 'react-hot-toast'; // 👈 استيراد التوست بالكامل هنا
 import './index.css';
 
 // Providers
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext'; 
 import { ProductProvider } from './context/ProductContext';
-import { CartProvider } from './context/CartContext';
+import { CartProvider, useCart } from './context/CartContext';
 
 // Pages
 import Login from './pages/AuthPages/Login';
@@ -36,10 +36,63 @@ import CheckOutPage from './pages/CheckOutPage';
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
 
-/**
- * 1️⃣ Main Layout (للصفحات اللي فيها NavBar و Footer)
- */
-const MainLayout = () => {
+// 1. Auth Protection Layout
+const AuthProtectionLayout = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+
+  if (user) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+// 2. Main Protection Layout (تعديل هنا للقط التوست والتأخير)
+const MainProtectionLayout = () => {
+  const { user, loading } = useAuth();
+  const location = useLocation(); // لقط المسار الحالي
+
+  useEffect(() => {
+    // 👈 لو المستخدم وصل لصفحة الـ /home والـ localStorage فيه علامة النجاح
+    if (location.pathname === '/home') {
+      const shouldShowToast = localStorage.getItem('showOrderToast');
+      
+      if (shouldShowToast === 'true') {
+        // تأخير 0.4 ثانية (400ms) بعد فتح الهوم بالظبط
+        const timer = setTimeout(() => {
+          toast.success('Order placed successfully!', {
+            duration: 4000,
+            position: 'top-center',
+            style: {
+              background: '#333',
+              color: '#fff',
+              fontWeight: 'bold',
+              borderRadius: '12px',
+            }
+          });
+          // نظف الـ localStorage فوراً عشان ما تظهرش تاني مع الـ Refresh
+          localStorage.removeItem('showOrderToast');
+        }, 400);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [location]);
+
+  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <NavBar />
@@ -51,126 +104,77 @@ const MainLayout = () => {
   );
 };
 
-/**
- * 2️⃣ Auth Layout (مخصص فقط لصفحات الـ Auth)
- */
-const AuthLayout = () => {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow">
-        <Outlet />
-      </main>
-    </div>
-  );
+// 3. Checkout Protection Layout
+const CheckoutProtectionLayout = () => {
+  const { cartItems } = useCart();
+
+  if (!cartItems || cartItems.length === 0) {
+    return <Navigate to="/cart" replace />;
+  }
+
+  return <Outlet />;
 };
 
-// --- التحقق من تسجيل الدخول ---
-const getAuthUser = () =>
-  localStorage.getItem('rememberedUser') ||
-  sessionStorage.getItem('rememberedUser');
-
-// --- الصفحات المحمية (تطلب تسجيل دخول) ---
-const ProtectedRoute = ({ children }) => {
-  const isAuth = getAuthUser();
-  return isAuth ? children : <Navigate to="/login" replace />;
+// Root Dynamic Redirect
+const RootRedirect = () => {
+  const { user } = useAuth();
+  return user ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />;
 };
 
-// --- صفحات الـ Auth العامة (تمنع دخول المسجلين) ---
-const PublicRoute = ({ children }) => {
-  const isAuth = getAuthUser();
-  return isAuth ? <Navigate to="/home" replace /> : children;
-};
-
-// --- Router configuration ---
+// Router Configuration
 const router = createBrowserRouter([
-  // 🔑 تفرع صفحات الـ Auth
   {
-    element: <AuthLayout />,
+    element: <AuthProtectionLayout />,
     children: [
-      {
-        path: '/login',
-        element: <PublicRoute><Login /></PublicRoute>,
-      },
-      {
-        path: '/signup',
-        element: <PublicRoute><Signup /></PublicRoute>,
-      },
-      {
-        path: '/forget-password',
-        element: <PublicRoute><ForgetPassword /></PublicRoute>,
-      },
-      {
-        path: '/verification-code',
-        element: <PublicRoute><VerifyOTP /></PublicRoute>,
-      },
-      {
-        path: '/reset-password',
-        element: <PublicRoute><ResetPassword /></PublicRoute>,
-      },
+      { path: '/login', element: <Login /> },
+      { path: '/signup', element: <Signup /> },
+      { path: '/forget-password', element: <ForgetPassword /> },
+      { path: '/verification-code', element: <VerifyOTP /> },
+      { path: '/reset-password', element: <ResetPassword /> },
     ],
   },
-
-  // 🏠 تفرع الصفحات العادية والرئيسية (تستخدم الـ MainLayout)
   {
-    element: <MainLayout />,
+    element: <MainProtectionLayout />,
     children: [
       {
         path: '/',
-        element: getAuthUser()
-          ? <Navigate to="/home" replace />
-          : <Navigate to="/login" replace />,
+        element: <RootRedirect />,
       },
+      { path: '/home', element: <Home /> },
+      { path: '/profile', element: <ProfilePage /> },
+      { path: '/about-us', element: <AboutUs /> },
+      { path: '/contact', element: <ContactUs /> },
+      { path: '/product/:id', element: <ProductPage /> },
+      { path: '/services', element: <Services /> },
+      { path: '/cart', element: <CartPage /> },
+      { path: '/favorites', element: <FavoriteProducts /> },
       {
-        path: '/home',
-        element: <ProtectedRoute><Home /></ProtectedRoute>,
+        element: <CheckoutProtectionLayout />,
+        children: [
+          { path: '/checkout', element: <CheckOutPage /> },
+        ],
       },
-      {
-        path: '/profile',
-        element: <ProtectedRoute><ProfilePage /></ProtectedRoute>,
-      },
-      {
-        path: '/about-us',
-        element: <AboutUs />,
-      },
-      {
-        path: '/contact',
-        element: <ContactUs />,
-      },
-      // 💡 التعديل هنا: جعل المسار يستقبل الـ id ديناميكياً وبحروف صغيرة ناصعة
-      {
-        path: '/product/:id',
-        element: <ProductPage />,
-      },
-      {
-        path: '/services',
-        element: <Services />, 
-      },
-      {
-        path: '/cart',
-        element: <CartPage />,
-      },
-      {
-        path: '/checkout',
-        element: <CheckOutPage />,
-      },
-      {
-        path: '/favorites',
-        element: <FavoriteProducts />,
-      }
     ],
   },
 ]);
 
-// --- Render App ---
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+// App Entry Point Wrapper
+const App = () => {
+  return (
     <AuthProvider>
-      <ProductProvider> 
+      <ProductProvider>
         <CartProvider>
+          {/* الـ Toaster محطوط هنا فوق الـ RouterProvider يعني شغال ومغطي التطبيق كله بنجاح */}
           <Toaster position="top-right" />
           <RouterProvider router={router} />
         </CartProvider>
       </ProductProvider>
     </AuthProvider>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
   </React.StrictMode>
 );

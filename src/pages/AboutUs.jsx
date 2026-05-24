@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // 👈 استيراد useNavigate للتوجيه
 import { IoArrowForward, IoCheckmarkCircleOutline, IoStatsChartOutline, IoSearchOutline } from "react-icons/io5";
 
 // استبدال الصور بصور مجهولة رمادية تتناسب مع التصميم الصناعي للموقع
@@ -24,6 +25,7 @@ const Divider = () => {
 };
 
 const AboutUs = () => {
+  const navigate = useNavigate(); // 👈 تعريف الـ hook هنا
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
 
@@ -65,9 +67,11 @@ const AboutUs = () => {
             IndusConnect is a B2B ecosystem designed to bridge the gap between manufacturers, suppliers, and startups.
           </motion.p>
 
+          {/* زرار الـ Work With Us المعدل للتوجيه لصفحة الـ Contact */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/contact')} // 👈 التوجيه لصفحة الـ contact
             className="cursor-pointer mt-8 sm:mt-10 md:mt-12 bg-black text-white px-8 sm:px-10 md:px-12 py-3 sm:py-4 rounded-full flex items-center gap-2 sm:gap-3 mx-auto font-bold shadow-xl hover:bg-slate-800 transition-all text-base sm:text-lg group"
           >
             Work With Us

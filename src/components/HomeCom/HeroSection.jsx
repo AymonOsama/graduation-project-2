@@ -1,8 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom'; // 👈 استيراد useNavigate للتحويل بين الصفحات
 import photo from '../../assets/Gemini_Generated_Image_k55jik55jik55jik-removebg-preview.png';
 
 const HeroSection = () => {
+  const navigate = useNavigate(); // 👈 تعريف الـ hook
+
   return (
     <section className="bg-[#ECDBC9] min-h-[550px] md:min-h-[620px] flex items-center px-6 sm:px-12 md:px-16 lg:px-24 pt-24 pb-12 md:py-20 overflow-hidden relative">
       
@@ -26,17 +29,21 @@ const HeroSection = () => {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
+            {/* الزر الأول: ينقل إلى صفحة الخدمات /services */}
             <motion.button 
               whileHover={{ scale: 1.03, backgroundColor: "#A12B27" }}
               whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/services')} // 👈 التوجيه لـ Services
               className="bg-[#B6332E] text-white px-10 py-3.5 rounded-full font-semibold text-base shadow-[0_10px_25px_rgba(182,51,46,0.25)] transition-all cursor-pointer"
             >
               Shop Now
             </motion.button>
             
+            {/* الزر الثاني: ينقل إلى صفحة عنّا /about-us */}
             <motion.button 
               whileHover={{ scale: 1.03, backgroundColor: "rgba(182,51,46,0.04)" }}
               whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/about-us')} // 👈 التوجيه لـ About Us
               className="border-[1.5px] border-[#92423F] text-[#1E2229] px-10 py-3.5 rounded-full font-semibold text-base transition-all bg-transparent cursor-pointer shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]"
             >
               Read more
