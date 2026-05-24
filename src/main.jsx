@@ -5,10 +5,10 @@ import {
   RouterProvider,
   Navigate,
   Outlet,
-  useLocation // 👈 استيراد useLocation عشان نراقب الصفحة الحالية
+  useLocation 
 } from 'react-router-dom';
 
-import toast, { Toaster } from 'react-hot-toast'; // 👈 استيراد التوست بالكامل هنا
+import toast, { Toaster } from 'react-hot-toast'; 
 import './index.css';
 
 // Providers
@@ -36,12 +36,14 @@ import CheckOutPage from './pages/CheckOutPage';
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
 
-// 1. Auth Protection Layout
+// 1. Auth Protection Layout (صفحات تسجيل الدخول)
 const AuthProtectionLayout = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // لو الـ Context لسه بيشيك على الـ sessionStorage/localStorage استنى هنا
+  if (loading) return <div className="flex h-screen items-center justify-center font-bold text-zinc-500">Loading...</div>;
 
+  // لو مسجل دخول بالفعل، ارميه على الهوم
   if (user) {
     return <Navigate to="/home" replace />;
   }
@@ -55,18 +57,16 @@ const AuthProtectionLayout = () => {
   );
 };
 
-// 2. Main Protection Layout (تعديل هنا للقط التوست والتأخير)
+// 2. Main Protection Layout (الصفحات المحمية)
 const MainProtectionLayout = () => {
   const { user, loading } = useAuth();
-  const location = useLocation(); // لقط المسار الحالي
+  const location = useLocation(); 
 
   useEffect(() => {
-    // 👈 لو المستخدم وصل لصفحة الـ /home والـ localStorage فيه علامة النجاح
     if (location.pathname === '/home') {
       const shouldShowToast = localStorage.getItem('showOrderToast');
       
       if (shouldShowToast === 'true') {
-        // تأخير 0.4 ثانية (400ms) بعد فتح الهوم بالظبط
         const timer = setTimeout(() => {
           toast.success('Order placed successfully!', {
             duration: 4000,
@@ -78,7 +78,6 @@ const MainProtectionLayout = () => {
               borderRadius: '12px',
             }
           });
-          // نظف الـ localStorage فوراً عشان ما تظهرش تاني مع الـ Refresh
           localStorage.removeItem('showOrderToast');
         }, 400);
 
@@ -87,8 +86,10 @@ const MainProtectionLayout = () => {
     }
   }, [location]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // انتظر لحد ما الـ Context يقرر هل فيه يوزر متخزن في السيشن ولا لاء
+  if (loading) return <div className="flex h-screen items-center justify-center font-bold text-zinc-500">Loading...</div>;
 
+  // لو مش مسجل، ارميه على اللوجين فوراً
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -117,7 +118,9 @@ const CheckoutProtectionLayout = () => {
 
 // Root Dynamic Redirect
 const RootRedirect = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  
+  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
   return user ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />;
 };
 
@@ -164,7 +167,6 @@ const App = () => {
     <AuthProvider>
       <ProductProvider>
         <CartProvider>
-          {/* الـ Toaster محطوط هنا فوق الـ RouterProvider يعني شغال ومغطي التطبيق كله بنجاح */}
           <Toaster position="top-right" />
           <RouterProvider router={router} />
         </CartProvider>

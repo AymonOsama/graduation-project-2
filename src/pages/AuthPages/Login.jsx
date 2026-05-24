@@ -14,41 +14,30 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false); 
     const [formData, setFormData] = useState({ username: "", password: "" });
 
-    // Handle input changes
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Handle login submission
     const onclickLogin = (e) => {
         e.preventDefault();
 
-        // تأمين قراءة الملف ليعمل بشكل سليم في جميع بيئات التطوير
-        const actualData = usersData.users ? usersData : (usersData.default || usersData);
+        const usersArray = usersData.users 
+            ? usersData.users 
+            : (usersData.default?.users || usersData);
 
-        // البحث المرن: يدعم الدخول بـ اسم المستخدم أو البريد الإلكتروني
-        const foundUser = actualData.users?.find(
+        const foundUser = usersArray?.find(
             (user) => (user.username === formData.username || user.email === formData.username) && user.password === formData.password
         );
 
         if (foundUser) {
-            toast.success(`Welcome back, ${foundUser.username}! You're logged in.`);
-            
-            // تحديث الـ Context العالمي للتطبيق بأوبجكت المستخدم كامل
+            toast.success(`Welcome back, ${foundUser.username}!`);
             loginGlobal(foundUser);
 
-            // 🚀 التعديل هنا: تخزين الـ id فقط كـ String بدلاً من أوبجكت المستخدم كامل
-            if (rememberMe) {
-                localStorage.setItem("rememberedUser", String(foundUser.id));
-                sessionStorage.removeItem("rememberedUser"); 
-            } else {
-                sessionStorage.setItem("rememberedUser", String(foundUser.id));
-                localStorage.removeItem("rememberedUser"); 
-            }
+            // 🎯 الحل الحاسم: التخزين في الـ Storages معاً لضمان عدم ضياع السيشن عند فتح تابة جديدة
+            localStorage.setItem("rememberedUser", String(foundUser.id));
+            sessionStorage.setItem("rememberedUser", String(foundUser.id));
 
-            setTimeout(() => {
-                navigate("/home");
-            }, 500);
+            setTimeout(() => navigate("/home"), 500);
         } else {
             toast.error("Invalid username or password, try again!");
         }
@@ -64,21 +53,13 @@ const Login = () => {
             >
                 {/* Left side: Login form */}
                 <div className="flex flex-col px-4 md:px-16">
-                    <motion.div 
-                        whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 mb-12 cursor-pointer"
-                    >
-                        <img 
-                            src="/logo.svg" 
-                            alt="IndusConnect" 
-                            className="w-55 h-15 object-contain" 
-                        />
+                    <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-3 mb-12 cursor-pointer">
+                        <img src="/logo.svg" alt="IndusConnect" className="w-55 h-15 object-contain" />
                     </motion.div>
 
                     <h2 className="text-4xl font-bold text-black mb-12 tracking-tight">Welcome back!</h2>
 
                     <form onSubmit={onclickLogin} className="space-y-5">
-                        {/* Username input */}
                         <div className="relative">
                             <input
                                 name="username"
@@ -91,7 +72,6 @@ const Login = () => {
                             />
                         </div>
 
-                        {/* Password input */}
                         <div className="relative">
                             <input
                                 name="password"
@@ -111,42 +91,37 @@ const Login = () => {
                             </button>
                         </div>
 
-                        {/* Remember me & Forgot password link */}
                         <div className="flex justify-between items-center">
-                            <div>
-                                <label className="flex items-center cursor-pointer select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={rememberMe}
-                                        onChange={(e) => setRememberMe(e.target.checked)}
-                                        className="form-checkbox h-5 w-5 text-black border-2 border-zinc-200 bg-white focus:ring-black rounded transition-colors cursor-pointer"
-                                    />
-                                    <span className="ml-2 text-sm font-medium text-zinc-900">Remember me</span>
-                                </label>
-                            </div>
+                            <label className="flex items-center cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="form-checkbox h-5 w-5 text-black border-2 border-zinc-200 bg-white focus:ring-black rounded transition-colors cursor-pointer"
+                                />
+                                <span className="ml-2 text-sm font-medium text-zinc-900">Remember me</span>
+                            </label>
                             <Link to="/forget-password" className="text-sm font-bold text-zinc-900 hover:underline">
                                 Forget password ?
                             </Link>
                         </div>
 
-                        {/* Submit button */}
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             type="submit"
-                            className="w-full bg-red-800 text-white py-3 rounded-full font-bold text-lg hover:bg-red-900 transition-all shadow-lg shadow-zinc-200 cursor-pointer mt-6"                                    >
+                            className="w-full bg-red-800 text-white py-3 rounded-full font-bold text-lg hover:bg-red-900 transition-all shadow-lg shadow-zinc-200 cursor-pointer mt-6"
+                        >
                             Login
                         </motion.button>
                     </form>
 
-                    {/* Signup redirect */}
                     <div className="text-center mt-8">
                         <Link to="/signup" className="text-sm font-bold text-zinc-900 hover:underline">
                             Don't have an account? Sign Up
                         </Link>
                     </div>
 
-                    {/* Social media login section */}
                     <div className="mt-12">
                         <div className="relative flex items-center mb-8">
                             <div className="grow border-t-2 border-zinc-100"></div>

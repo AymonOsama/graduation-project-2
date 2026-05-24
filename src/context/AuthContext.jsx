@@ -1,56 +1,44 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import usersData from '../data/users.json'; // 👈 تأكد من مسار ملف الـ JSON عندك
+import usersData from '../data/users.json'; 
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [allUsers, setAllUsers] = useState([]); // 🚀 هنا هنخزن كل المستخدمين
-    const [user, setUser] = useState(null);       // المستخدم الحالي اللي مسجل دخول
+    const [allUsers, setAllUsers] = useState([]); 
+    const [user, setUser] = useState(null);       
     const [loading, setLoading] = useState(true); 
 
     useEffect(() => {
-        // 1️⃣ خطوة جلب كل المستخدمين وحفظهم في الـ State العالمي
-        const loadAllUsers = () => {
+        const initializeAuth = () => {
             try {
-                // تأمين قراءة ملف الـ JSON في كل بيئات التطوير
                 const actualData = usersData.users ? usersData.users : (usersData.default?.users || usersData);
-                setAllUsers(actualData || []);
-            } catch (error) {
-                console.error("Error loading all users data:", error);
-            }
-        };
+                const fetchedUsers = actualData || [];
+                setAllUsers(fetchedUsers);
 
-        // 2️⃣ خطوة الشيك على اليوزر المسجل حالياً (عن طريق الـ id المحفوظ)
-        const checkLoggedInUser = () => {
-            const localUserId = localStorage.getItem("rememberedUser");
-            const sessionUserId = sessionStorage.getItem("rememberedUser");
-            const savedUserId = localUserId || sessionUserId;
+                const localUserId = localStorage.getItem("rememberedUser");
+                const sessionUserId = sessionStorage.getItem("rememberedUser");
+                const savedUserId = localUserId || sessionUserId;
 
-            if (savedUserId) {
-                try {
-                    // تأمين الصيغة وجلب اليوزر المطابق للـ id من الملف مباشرة
-                    const actualData = usersData.users ? usersData.users : (usersData.default?.users || usersData);
-                    const found = actualData?.find(u => String(u.id) === String(savedUserId));
+                if (savedUserId && fetchedUsers.length > 0) {
+                    // 🎯 الـ .trim() هنا عشان لو فيه مسافة خفية في الـ JSON أو الـ Storage ما تبوظش المقارنة
+                    const found = fetchedUsers.find(u => String(u.id).trim() === String(savedUserId).trim());
                     if (found) {
-                        setUser(found);
+                        setUser(found); 
                     }
-                } catch (error) {
-                    console.error("Error matching saved user ID:", error);
-                    localStorage.removeItem("rememberedUser");
-                    sessionStorage.removeItem("rememberedUser");
                 }
+            } catch (error) {
+                console.error("Auth initialization error:", error);
+            } finally {
+                setLoading(false); 
             }
         };
 
-        loadAllUsers();
-        checkLoggedInUser();
-        setLoading(false);
+        initializeAuth();
     }, []);
 
-    // 🔍 دالة مساعدة ممتازة: تنادي عليها من أي صفحة وتباصي لها الـ ID ترجعلك بيانات اليوزر فوراً
     const getUserById = (id) => {
-        return allUsers.find(u => String(u.id) === String(id)) || null;
+        return allUsers.find(u => String(u.id).trim() === String(id).trim()) || null;
     };
 
     const loginGlobal = (userData) => {
@@ -83,9 +71,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        // 🚀 باصينا هنا الـ allUsers والـ getUserById عشان تستخدمهم براحتك في أي صفحة
         <AuthContext.Provider value={{ user, allUsers, getUserById, loginGlobal, logoutGlobal, loading }}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };
