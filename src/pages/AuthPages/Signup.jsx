@@ -1,118 +1,196 @@
-import React from 'react';
-import loginWallpaper from '../../assets/loginPagesWallpaper.jpg';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+// استيراد الأيقونات المحدثة من React Icons (أبيض وأسود)
+import { IoEyeOutline, IoEyeOffOutline, IoLogoGoogle, IoLogoFacebook } from "react-icons/io5";
+import { FaGithub } from "react-icons/fa";
+
+// صورة تجريدية صناعية/تكنولوجية راقية بالأبيض والأسود (غير محددة لشخص)
+const loginWallpaper = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop";
 
 const Signup = () => {
-  return (
-    <div 
-      style={{ backgroundImage: `url(${loginWallpaper})` }}
-      className="min-h-screen flex items-center justify-center p-6 bg-cover bg-center bg-no-repeat relative font-sans"
-    >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black/40"></div>
+    const [showPassword, setShowPassword] = useState(false);
+    const [role, setRole] = useState('Supplier');
+    const [agreed, setAgreed] = useState(false); // الـ State الخاصة بالموافقة على الشروط
 
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        // التعديل الأساسي: max-w-xl عشان يكون متناسق مع صفحة الـ Login الجديدة
-        className="max-w-xl w-full bg-white/70 backdrop-blur-2xl rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/50 p-10 md:p-14 z-10"
-      >
-        {/* Header */}
-        <div className="text-center mb-10">
-          <motion.h2 
-            className="text-5xl md:text-6xl font-black text-black tracking-tighter mb-4"
-          >
-            Register
-          </motion.h2>
-          <div className="h-2 w-20 bg-blue-500 mx-auto rounded-full"></div>
-        </div>
-
-        {/* Form */}
-        <form className="space-y-7 md:space-y-9" onSubmit={(e) => e.preventDefault()}>
-          
-          <div className="grid grid-cols-1 gap-7">
+    return (
+        <div className="min-h-screen bg-white flex items-center justify-center font-sans relative overflow-hidden">
             
-            {/* First & Last Name Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-              {/* First Name */}
-              <div className="group space-y-2">
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="First Name"
-                    className="w-full pl-2 pr-10 py-3 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                  />
-                  <User className="absolute right-2 top-3 text-black/60 group-focus-within:text-blue-500 transition-colors" size={22} />
+            {/* تأثير خلفية خفيف لكسر حدة الأبيض */}
+            <div className="absolute inset-0 z-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
+
+            <div className="max-w-[1200px] w-full grid grid-cols-1 lg:grid-cols-2 gap-16 p-8 items-center relative z-10">
+                
+                {/* القسم الأيسر: النموذج */}
+                <div className="space-y-10 order-2 lg:order-1">
+                    {/* الشعار */}
+                    <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-[#C53030] rounded-lg flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-white rounded-md rotate-45 flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                        </div>
+                        <span className="text-2xl font-bold tracking-tighter text-slate-900">IndusConnect</span>
+                    </div>
+
+                    <div className="space-y-2">
+                        <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Create an account</h1>
+                    </div>
+
+                    <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                        <div className="space-y-4">
+                            {/* اسم المستخدم */}
+                            <div className="relative">
+                                <input 
+                                    type="text" 
+                                    placeholder="Username"
+                                    className="w-full px-6 py-4 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-900"
+                                />
+                            </div>
+
+                            {/* البريد الإلكتروني */}
+                            <div className="relative">
+                                <input 
+                                    type="email" 
+                                    placeholder="Email"
+                                    className="w-full px-6 py-4 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-900"
+                                />
+                            </div>
+
+                            {/* كلمة المرور */}
+                            <div className="relative">
+                                <input 
+                                    type={showPassword ? "text" : "password"} 
+                                    placeholder="Password"
+                                    className="w-full px-6 py-4 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-900"
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xl cursor-pointer"
+                                >
+                                    {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* اختيار الدور */}
+                        <div className="flex gap-8 py-2">
+                            <label className="flex items-center gap-3 cursor-pointer group select-none">
+                                <div className="relative flex items-center justify-center">
+                                    <input 
+                                        type="radio" 
+                                        name="role" 
+                                        checked={role === 'Supplier'} 
+                                        onChange={() => setRole('Supplier')}
+                                        className="peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-full checked:border-slate-900 transition-all cursor-pointer"
+                                    />
+                                    <div className="absolute w-2.5 h-2.5 bg-slate-900 rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
+                                </div>
+                                <span className="font-bold text-slate-900">Supplier</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer group select-none">
+                                <div className="relative flex items-center justify-center">
+                                    <input 
+                                        type="radio" 
+                                        name="role" 
+                                        checked={role === 'Buyer'} 
+                                        onChange={() => setRole('Buyer')}
+                                        className="peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-full checked:border-slate-900 transition-all cursor-pointer"
+                                    />
+                                    <div className="absolute w-2.5 h-2.5 bg-slate-900 rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
+                                </div>
+                                <span className="font-bold text-slate-900">Buyer</span>
+                            </label>
+                        </div>
+
+                        {/* الترتيب الجديد: الـ Checkbox أولاً ثم زر التسجيل */}
+                        <div className="space-y-4 pt-2">
+                            {/* خانة الموافقة على الشروط وسياسة الخصوصية (أصبحت في الأعلى) */}
+                            <div className="flex items-start px-2">
+                                <label className="flex items-center gap-3 cursor-pointer select-none group">
+                                    <div className="relative flex items-center justify-center mt-0.5">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={agreed}
+                                            onChange={(e) => setAgreed(e.target.checked)}
+                                            className="peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-md checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer"
+                                        />
+                                        <svg 
+                                            className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-600">
+                                        I agree to the{' '}
+                                        <Link to="/terms" className="text-slate-900 font-bold hover:underline">Terms of Service</Link>
+                                        {' '}and{' '}
+                                        <Link to="/privacy" className="text-slate-900 font-bold hover:underline">Privacy Policy</Link>
+                                    </span>
+                                </label>
+                            </div>
+
+                            {/* زر التسجيل */}
+                            <button 
+                                disabled={!agreed}
+                                className={`w-full text-white py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-zinc-100 block text-center ${
+                                    agreed 
+                                    ? 'bg-red-800 hover:bg-red-900 cursor-pointer shadow-red-100' 
+                                    : 'bg-slate-300 opacity-60 cursor-not-allowed shadow-none'
+                                }`}
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+
+                        {/* التسجيل عبر التواصل الاجتماعي */}
+                        <div className="relative py-2">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
+                            <div className="relative flex justify-center text-sm uppercase"><span className="bg-white px-4 text-slate-500 font-bold">or continue with</span></div>
+                        </div>
+
+                        {/* أيقونات أبيض وأسود فقط */}
+                        <div className="flex justify-center gap-6">
+                            <button type="button" className="p-3 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-2xl text-slate-900 cursor-pointer">
+                                <IoLogoGoogle />
+                            </button>
+                            <button type="button" className="p-3 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-2xl text-slate-900 cursor-pointer">
+                                <FaGithub />
+                            </button>
+                            <button type="button" className="p-3 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-2xl text-slate-900 cursor-pointer">
+                                <IoLogoFacebook />
+                            </button>
+                        </div>
+
+                        <p className="text-center font-medium text-slate-600">
+                            Already have an account? <Link to="/login" className="text-slate-900 font-bold hover:underline">Login</Link>
+                        </p>
+                    </form>
                 </div>
-              </div>
 
-              {/* Last Name */}
-              <div className="group space-y-2">
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="Last Name"
-                    className="w-full pl-2 pr-10 py-3 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                  />
-                  <User className="absolute right-2 top-3 text-black/60 group-focus-within:text-blue-500 transition-colors" size={22} />
-                </div>
-              </div>
+                {/* القسم الأيمن: الصورة التجريدية */}
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="hidden lg:block order-1 lg:order-2 h-full min-h-[600px] relative"
+                >
+                    <div 
+                        className="absolute inset-0 rounded-[3rem] bg-cover bg-center shadow-2xl"
+                        style={{ backgroundImage: `url(${loginWallpaper})` }}
+                    >
+                        {/* Overlay خفيف ليتناسب مع الستايل النظيف */}
+                        <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[1px] rounded-[3rem]"></div>
+                    </div>
+                </motion.div>
             </div>
-
-            {/* Email Input */}
-            <div className="group space-y-2">
-              <div className="relative">
-                <input 
-                  type="email" 
-                  placeholder="Email Address"
-                  className="w-full pl-2 pr-10 py-3 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                />
-                <Mail className="absolute right-2 top-3 text-black/60 group-focus-within:text-blue-500 transition-colors" size={22} />
-              </div>
-            </div>
-
-            {/* Password Input */}
-            <div className="group space-y-2">
-              <div className="relative">
-                <input 
-                  type="password" 
-                  placeholder="Password"
-                  className="w-full pl-2 pr-10 py-3 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                />
-                <Lock className="absolute right-2 top-3 text-black/60 group-focus-within:text-blue-500 transition-colors" size={22} />
-              </div>
-            </div>
-
-            {/* Confirm Password Input */}
-            <div className="group space-y-2">
-              <div className="relative">
-                <input 
-                  type="password" 
-                  placeholder="Confirm Password"
-                  className="w-full pl-2 pr-10 py-3 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                />
-                <Lock className="absolute right-2 top-3 text-black/60 group-focus-within:text-blue-500 transition-colors" size={22} />
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-[0_15px_30px_rgba(59,130,246,0.3)] transition-all duration-300 flex items-center justify-center gap-3 group relative cursor-pointer text-xl tracking-widest active:scale-95">
-            SIGN UP
-            <ChevronRight size={22} className="group-hover:translate-x-2 transition-transform" />
-          </button>
-        </form>
-
-        {/* Footer Link */}
-        <p className="text-center mt-10 text-black/70 text-base font-bold">
-          Already have an account? <Link to="/login" className="text-blue-600 font-black cursor-pointer hover:text-blue-800 hover:underline underline-offset-8 transition-all">Login</Link>
-        </p>
-      </motion.div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default Signup;

@@ -1,22 +1,43 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+  Outlet
+} from 'react-router-dom';
+
 import { Toaster } from 'react-hot-toast';
-// ----------------------------------------------------------------------
-// STYLES & ASSETS
+
 import './index.css';
-// ----------------------------------------------------------------------
-// PAGES & COMPONENTS
+
+// Providers
+import { AuthProvider } from './context/AuthContext';
+import { ProductProvider } from './context/ProductContext';
+import { CartProvider } from './context/CartContext';
+
+// Pages
 import Login from './pages/AuthPages/Login';
 import Signup from './pages/AuthPages/Signup';
 import ForgetPassword from './pages/AuthPages/ForgetPassword';
 import Home from './pages/Home';
+import ProfilePage from './pages/ProfilePage';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import VerifyOTP from './pages/AuthPages/VerifyOTP';
+import ResetPassword from './pages/AuthPages/ResetPassword';
+import Services from './pages/Services';
+import ProductPage from './pages/ProductPage';
+import CartPage from './pages/CartPage';
+import FavoriteProducts from './pages/FavoriteProducts';
+import CheckOutPage from './pages/CheckOutPage';
+
+// Components
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
+
 /**
- * MAIN LAYOUT COMPONENT
- * Provides a consistent structure across all protected pages.
- * The <Outlet /> is where the child route components will be rendered.
+ * 1️⃣ Main Layout (للصفحات اللي فيها NavBar و Footer)
  */
 const MainLayout = () => {
   return (
@@ -29,98 +50,127 @@ const MainLayout = () => {
     </div>
   );
 };
-// ----------------------------------------------------------------------
-// AUTHENTICATION & ROUTE GUARDS
-// ----------------------------------------------------------------------
+
 /**
- * Retrieves the stored user from either LocalStorage or SessionStorage.
+ * 2️⃣ Auth Layout (مخصص فقط لصفحات الـ Auth)
  */
-const getAuthUser = () => localStorage.getItem("rememberedUser") || sessionStorage.getItem("rememberedUser");
-/**
- * ProtectedRoute Guard:
- * Redirects unauthenticated users to the Login page.
- */
+const AuthLayout = () => {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+// --- التحقق من تسجيل الدخول ---
+const getAuthUser = () =>
+  localStorage.getItem('rememberedUser') ||
+  sessionStorage.getItem('rememberedUser');
+
+// --- الصفحات المحمية (تطلب تسجيل دخول) ---
 const ProtectedRoute = ({ children }) => {
   const isAuth = getAuthUser();
   return isAuth ? children : <Navigate to="/login" replace />;
 };
-/**
- * PublicRoute Guard:
- * Prevents authenticated users from accessing Auth pages (Login/Signup).
- */
+
+// --- صفحات الـ Auth العامة (تمنع دخول المسجلين) ---
 const PublicRoute = ({ children }) => {
   const isAuth = getAuthUser();
   return isAuth ? <Navigate to="/home" replace /> : children;
 };
-// ----------------------------------------------------------------------
-// ROUTER CONFIGURATION
-// ----------------------------------------------------------------------
+
+// --- Router configuration ---
 const router = createBrowserRouter([
-  // Root Redirect Logic
+  // 🔑 تفرع صفحات الـ Auth
   {
-    path: "/",
-    element: getAuthUser() ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />,
-  },
-  // 1. PUBLIC AUTH ROUTES (No NavBar/Footer)
-  {
-    path: "/login",
-    element: (
-      <PublicRoute>
-        <Login />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/signup",
-    element: (
-      <PublicRoute>
-        <Signup />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/forget-password",
-    element: (
-      <PublicRoute>
-        <ForgetPassword />
-      </PublicRoute>
-    ),
-  },
-  // 2. PROTECTED APPLICATION ROUTES (With MainLayout)
-  {
-    element: (
-      <ProtectedRoute>
-        <MainLayout />
-      </ProtectedRoute>
-    ),
+    element: <AuthLayout />,
     children: [
       {
-        path: "/home",
-        element: <Home />,
+        path: '/login',
+        element: <PublicRoute><Login /></PublicRoute>,
       },
-      // You can easily add more routes here (e.g., /profile, /settings)
+      {
+        path: '/signup',
+        element: <PublicRoute><Signup /></PublicRoute>,
+      },
+      {
+        path: '/forget-password',
+        element: <PublicRoute><ForgetPassword /></PublicRoute>,
+      },
+      {
+        path: '/verification-code',
+        element: <PublicRoute><VerifyOTP /></PublicRoute>,
+      },
+      {
+        path: '/reset-password',
+        element: <PublicRoute><ResetPassword /></PublicRoute>,
+      },
+    ],
+  },
+
+  // 🏠 تفرع الصفحات العادية والرئيسية (تستخدم الـ MainLayout)
+  {
+    element: <MainLayout />,
+    children: [
+      {
+        path: '/',
+        element: getAuthUser()
+          ? <Navigate to="/home" replace />
+          : <Navigate to="/login" replace />,
+      },
+      {
+        path: '/home',
+        element: <ProtectedRoute><Home /></ProtectedRoute>,
+      },
+      {
+        path: '/profile',
+        element: <ProtectedRoute><ProfilePage /></ProtectedRoute>,
+      },
+      {
+        path: '/about-us',
+        element: <AboutUs />,
+      },
+      {
+        path: '/contact',
+        element: <ContactUs />,
+      },
+      // 💡 التعديل هنا: جعل المسار يستقبل الـ id ديناميكياً وبحروف صغيرة ناصعة
+      {
+        path: '/product/:id',
+        element: <ProductPage />,
+      },
+      {
+        path: '/services',
+        element: <Services />, 
+      },
+      {
+        path: '/cart',
+        element: <CartPage />,
+      },
+      {
+        path: '/checkout',
+        element: <CheckOutPage />,
+      },
+      {
+        path: '/favorites',
+        element: <FavoriteProducts />,
+      }
     ],
   },
 ]);
-// ----------------------------------------------------------------------
-// APPLICATION RENDER
 
+// --- Render App ---
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {/* Global Toast Notifications Configuration */}
-    <Toaster 
-      position="top-right" 
-      toastOptions={{
-        duration: 3000,
-        style: { 
-          fontWeight: 'bold',
-          borderRadius: '12px',
-          background: '#333',
-          color: '#fff',
-        },
-      }}
-    />
-    
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <ProductProvider> 
+        <CartProvider>
+          <Toaster position="top-right" />
+          <RouterProvider router={router} />
+        </CartProvider>
+      </ProductProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

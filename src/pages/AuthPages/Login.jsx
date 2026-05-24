@@ -1,177 +1,196 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ChevronRight } from 'lucide-react'; 
+import { FaGoogle, FaApple, FaFacebookF } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+import usersData from '../../data/users.json'; 
 import toast from 'react-hot-toast';
-
-// Static Assets and Data
-import loginWallpaper from '../../assets/loginPagesWallpaper.jpg';
-import Users from '../../data/users.json';
 
 const Login = () => {
     const navigate = useNavigate();
+    const { loginGlobal } = useAuth();
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false); 
+    const [formData, setFormData] = useState({ username: "", password: "" });
 
-    // --- State Management ---
-    const [countsTry, setCountsTry] = useState(1); // Track failed login attempts
-    const [rememberMe, setRememberMe] = useState(false); // Track "Remember Me" checkbox status
-    const [formData, setFormData] = useState({
-        email: "",
-        password: "" 
-    });
-
-    // --- Lifecycle: Check Persistent Storage ---
-    useEffect(() => {
-        // Retrieve saved user data from LocalStorage if it exists
-        const rememberedUser = localStorage.getItem("rememberedUser");
-        if (rememberedUser) {
-            const userData = JSON.parse(rememberedUser);
-            // Auto-fill form and check the "Remember Me" box
-            setFormData({
-                email: userData.email,
-                password: userData.password
-            });
-            setRememberMe(true);
-        }
-    }, []);
-
-    // --- Form Handlers ---
+    // Handle input changes
     const handleChange = (e) => {
-        // Sync input changes with the formData state
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // Handle login submission
     const onclickLogin = (e) => {
         e.preventDefault();
 
-        // Authentication: Find user matching both email and password from JSON data
-        const foundUser = Users.users.find(
-            user => user.email === formData.email && user.password === formData.password
+        // تأمين قراءة الملف ليعمل بشكل سليم في جميع بيئات التطوير
+        const actualData = usersData.users ? usersData : (usersData.default || usersData);
+
+        // البحث المرن: يدعم الدخول بـ اسم المستخدم أو البريد الإلكتروني
+        const foundUser = actualData.users?.find(
+            (user) => (user.username === formData.username || user.email === formData.username) && user.password === formData.password
         );
 
         if (foundUser) {
-            // Persistent Login Logic
+            toast.success(`Welcome back, ${foundUser.username}! You're logged in.`);
+            
+            // تحديث الـ Context العالمي للتطبيق بأوبجكت المستخدم كامل
+            loginGlobal(foundUser);
+
+            // 🚀 التعديل هنا: تخزين الـ id فقط كـ String بدلاً من أوبجكت المستخدم كامل
             if (rememberMe) {
-                console.log("Saving user credentials to LocalStorage...");
-                localStorage.setItem("rememberedUser", JSON.stringify(foundUser));
+                localStorage.setItem("rememberedUser", String(foundUser.id));
+                sessionStorage.removeItem("rememberedUser"); 
             } else {
-                // Clear storage if user chooses not to be remembered
-                sessionStorage.setItem("rememberedUser", JSON.stringify(foundUser));
+                sessionStorage.setItem("rememberedUser", String(foundUser.id));
+                localStorage.removeItem("rememberedUser"); 
             }
 
-            toast.success("Login successful!");
-            
-            // Brief delay to ensure storage operations and toast are processed before redirecting
             setTimeout(() => {
                 navigate("/home");
-            }, 100); 
-            
+            }, 500);
         } else {
-            // Error Handling: Invalid credentials
-            toast.error("Invalid email or password. Please try again.");
-
-            // Security Logic: Lock out after 3 failed attempts
-            const nextCount = countsTry + 1;
-            setCountsTry(nextCount);
-
-            if (nextCount > 3) {
-                toast.error("Too many failed attempts. Redirecting to recovery...");
-                navigate("/forget-password");
-            }
+            toast.error("Invalid username or password, try again!");
         }
     };
 
     return (
-        <div 
-            style={{ backgroundImage: `url(${loginWallpaper})` }}
-            className="min-h-screen flex items-center justify-center p-6 bg-cover bg-center bg-no-repeat relative font-sans"
-        >
-            {/* Dark Visual Overlay for better readability */}
-            <div className="absolute inset-0 bg-black/40"></div>
-
+        <div className="min-h-screen bg-white flex items-center justify-center p-4 md:p-10 font-sans selection:bg-black selection:text-white">
             <motion.div 
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-xl w-full bg-white/70 backdrop-blur-2xl rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/50 p-10 md:p-14 z-10"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
             >
-                {/* Header Section */}
-                <div className="text-center mb-10 md:mb-12">
-                    <motion.h2 className="text-5xl md:text-6xl font-black text-black tracking-tighter mb-4">
-                        Login
-                    </motion.h2>
-                    <div className="h-2 w-20 bg-blue-500 mx-auto rounded-full"></div>
-                </div>
+                {/* Left side: Login form */}
+                <div className="flex flex-col px-4 md:px-16">
+                    <motion.div 
+                        whileHover={{ scale: 1.05 }}
+                        className="flex items-center gap-3 mb-12 cursor-pointer"
+                    >
+                        <img 
+                            src="/logo.svg" 
+                            alt="IndusConnect" 
+                            className="w-55 h-15 object-contain" 
+                        />
+                    </motion.div>
 
-                {/* Main Login Form */}
-                <form className="space-y-10 md:space-y-12" onSubmit={onclickLogin}>
-                    
-                    <div className="grid grid-cols-1 gap-10">
-                        {/* Email Input Field */}
-                        <div className="group space-y-2">
-                            <div className="relative">
-                                <input 
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    type="email" 
-                                    placeholder="Email Address"
-                                    className="w-full pl-2 pr-12 py-4 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                                    required
-                                />
-                                <Mail className="absolute right-2 top-4 text-black/60 group-focus-within:text-blue-500 transition-colors" size={24} />
-                            </div>
-                        </div>
+                    <h2 className="text-4xl font-bold text-black mb-12 tracking-tight">Welcome back!</h2>
 
-                        {/* Password Input Field */}
-                        <div className="group space-y-2">
-                            <div className="relative">
-                                <input 
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    type="password" 
-                                    placeholder="Password"
-                                    className="w-full pl-2 pr-12 py-4 bg-transparent border-b-2 border-black/20 outline-none transition-all duration-300 focus:border-blue-500 text-black text-lg font-bold placeholder:text-black/30"
-                                    required
-                                />
-                                <Lock className="absolute right-2 top-4 text-black/60 group-focus-within:text-blue-500 transition-colors" size={24} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Secondary Actions: Remember Me & Forgot Password */}
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-black">
-                        <label className="text-black/80 flex items-center gap-3 cursor-pointer hover:text-black transition-colors">
-                            <input 
-                                type="checkbox" 
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                                className="w-5 h-5 rounded border-gray-300 accent-blue-500 cursor-pointer" 
+                    <form onSubmit={onclickLogin} className="space-y-5">
+                        {/* Username input */}
+                        <div className="relative">
+                            <input
+                                name="username"
+                                type="text"
+                                placeholder="Username or Email"
+                                value={formData.username}
+                                onChange={handleChange}
+                                className="w-full px-6 py-4 rounded-2xl border-2 border-zinc-200 bg-white focus:border-black focus:ring-4 focus:ring-zinc-100 outline-none transition-all text-black font-medium"
+                                required
                             />
-                            Remember me
-                        </label>
-                        <Link to="/forget-password" size={24} className="text-blue-600 cursor-pointer hover:text-blue-800 transition-colors tracking-tight">
-                            Forgot Password?
+                        </div>
+
+                        {/* Password input */}
+                        <div className="relative">
+                            <input
+                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                className="w-full px-6 py-4 rounded-2xl border-2 border-zinc-200 bg-white focus:border-black focus:ring-4 focus:ring-zinc-100 outline-none transition-all text-black font-medium"
+                                required
+                            />
+                            <button 
+                                type="button" 
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-black transition-colors cursor-pointer"
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+
+                        {/* Remember me & Forgot password link */}
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <label className="flex items-center cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="form-checkbox h-5 w-5 text-black border-2 border-zinc-200 bg-white focus:ring-black rounded transition-colors cursor-pointer"
+                                    />
+                                    <span className="ml-2 text-sm font-medium text-zinc-900">Remember me</span>
+                                </label>
+                            </div>
+                            <Link to="/forget-password" className="text-sm font-bold text-zinc-900 hover:underline">
+                                Forget password ?
+                            </Link>
+                        </div>
+
+                        {/* Submit button */}
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="submit"
+                            className="w-full bg-red-800 text-white py-3 rounded-full font-bold text-lg hover:bg-red-900 transition-all shadow-lg shadow-zinc-200 cursor-pointer mt-6"                                    >
+                            Login
+                        </motion.button>
+                    </form>
+
+                    {/* Signup redirect */}
+                    <div className="text-center mt-8">
+                        <Link to="/signup" className="text-sm font-bold text-zinc-900 hover:underline">
+                            Don't have an account? Sign Up
                         </Link>
                     </div>
 
-                    {/* Submit Button */}
-                    <button 
-                        type="submit"
-                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-5 md:py-6 rounded-[2rem] shadow-[0_15px_30px_rgba(59,130,246,0.3)] transition-all duration-300 flex items-center justify-center gap-3 group relative cursor-pointer text-xl tracking-widest active:scale-95"
-                    >
-                        SIGN IN
-                        <ChevronRight size={22} className="group-hover:translate-x-2 transition-transform" />
-                    </button>
-                </form>
+                    {/* Social media login section */}
+                    <div className="mt-12">
+                        <div className="relative flex items-center mb-8">
+                            <div className="grow border-t-2 border-zinc-100"></div>
+                            <span className="px-4 text-zinc-400 text-[10px] font-black uppercase tracking-widest">or continue with</span>
+                            <div className="grow border-t-2 border-zinc-100"></div>
+                        </div>
 
-                {/* Footer Section: Signup Link */}
-                <p className="text-center mt-12 md:mt-14 text-black/70 text-base font-bold">
-                    New here? <Link to="/signup" className="text-blue-600 font-black cursor-pointer hover:text-blue-800 hover:underline underline-offset-8 transition-all">Create Account</Link>
-                </p>
+                        <div className="flex justify-center gap-16">
+                            {[
+                                { icon: <FaGoogle size={20} />, label: "Google" },
+                                { icon: <FaApple size={22} />, label: "Apple" },
+                                { icon: <FaFacebookF size={18} />, label: "Facebook" }
+                            ].map((social, index) => (
+                                <motion.button 
+                                    key={index}
+                                    whileHover={{ y: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    type="button" 
+                                    className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white transition-transform shadow-md hover:bg-zinc-800 cursor-pointer"
+                                    aria-label={social.label}
+                                >
+                                    {social.icon}
+                                </motion.button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right side: Decorative image section */}
+                <motion.div 
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="hidden md:block h-[600px]"
+                >
+                    <div className="w-full h-full bg-zinc-100 rounded-[4rem] border-2 border-zinc-50 flex items-center justify-center relative overflow-hidden">
+                        <div className="text-zinc-300">
+                             <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                             </svg>
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-24 h-24 bg-white rounded-tl-[3.5rem]"></div>
+                    </div>
+                </motion.div>
             </motion.div>
         </div>
     );

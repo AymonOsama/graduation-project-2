@@ -1,148 +1,169 @@
-import React, { useEffect, useState } from 'react';
-// 1. تنظيف الـ Imports ومنع التكرار
-import { Search, Menu, X, Heart, User, ChevronDown } from 'lucide-react'; 
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion'; 
-import toast from 'react-hot-toast';
+import { Menu, Search, Heart, User, ShoppingBag, ChevronDown } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext'; 
+import { useCart } from '../context/CartContext'; 
+import { useFavorite } from '../hooks/useFavorite'; // 🚀 استيراد هوك المفضلة
 
-// عمل Import للكومبوننت الجديد
-import SearchBar from './NavBarCom/SearchBar'; 
+// استيراد المكونات الفرعية
+import SearchPopup from '../components/NavBarComponents/SearchPopup';
+import NavMenu from './NavBarComponents/NavMenu';
+import UserDropdown from '../components/NavBarComponents/UserDropdown';
 
 const NavBar = () => {
     const navigate = useNavigate();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-    const [userData, setUserData] = useState(null);
+    const { user, logoutGlobal } = useAuth(); 
+    
+    // 🚀 سحبنا هنا الـ cartCount ومصفوفة cartItems لتأمين الحساب في كل السيناريوهات
+    const { cartCount, cartItems = [] } = useCart(); 
+    const { favoriteIds = [] } = useFavorite(); // 🚀 سحب الـ IDs للمفضلة مع قِيمة افتراضية مصفوفة فاضية تفادياً لأي إيرور
 
-    const handlelogout = () => {
-        localStorage.removeItem('rememberedUser');
-        sessionStorage.removeItem('rememberedUser');
-        setUserData(null);
-        setIsUserMenuOpen(false);
-        navigate('/login'); 
-        toast.success('Logged out successfully!');
-    };
+    // تحديد العدد الفعلي للسلة ديناميكياً
+    const currentCartCount = cartCount !== undefined ? cartCount : cartItems.length;
+    
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
 
     useEffect(() => {
-        const savedUSerData = localStorage.getItem('rememberedUser') || sessionStorage.getItem('rememberedUser');
-        if (savedUSerData) {
-            setUserData(JSON.parse(savedUSerData));
-        } 
+        const handleScroll = () => {
+            if (window.scrollY > 20) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const handleLogout = () => {
+        logoutGlobal(); 
+        setIsUserDropdownOpen(false);
+        navigate('/login');
+    };
+
     return (
-        <nav className="w-full bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50 font-sans">
-            <div className="max-w-[100%] mx-auto px-4 md:px-12">
-                <div className="flex items-center justify-between h-20 gap-2 md:gap-4">
+        <nav 
+            className={`w-full fixed top-0 left-0 z-50 font-sans transition-all duration-300 ease-in-out ${
+                isScrolled 
+                    ? 'bg-white border-b border-gray-100 shadow-sm' 
+                    : 'bg-transparent border-b border-transparent backdrop-blur-md'
+            }`}
+        >
+            {/* 🛠️ تحسين الـ Padding للكونتينر على الموبايل ليصبح px-4 لتوفير مساحة عرض مريحة */}
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-14">
+                
+                {/* 🛠️ تعديل ديناميكي للارتفاع: يبدأ من h-16 للموبايل وحتى h-28 للشاشات الكبيرة لتفادي الضخامة */}
+                <div className="flex items-center justify-between h-16 sm:h-22 md:h-24 lg:h-28 transition-all duration-300">
                     
-                    {/* --- 1. Logo Section --- */}
-                    <div className="flex-shrink-0 z-50">
-                        <Link to="/home" className="text-xl md:text-2xl font-black text-blue-600 tracking-tighter">
-                            COMP<span className="text-black">ARO</span>
+                    {/* --- اليسار: زر المنيو واللوجو --- */}
+                    <div className="flex items-center gap-2 sm:gap-6 md:gap-8">
+                        <button 
+                            className={`p-2 cursor-pointer rounded-xl transition-all text-slate-900 ${
+                                isScrolled ? 'hover:bg-gray-100/70' : 'hover:bg-slate-900/5'
+                            }`} 
+                            onClick={() => setIsMenuOpen(true)}
+                        >
+                            <Menu className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8" />
+                        </button>
+
+                        <Link to="/home" className="flex items-center">
+                            <img 
+                                src="/logo.svg" 
+                                alt="IndusConnect" 
+                                className="w-24 h-10 sm:w-32 sm:h-14 md:w-40 md:h-20 object-contain transition-all duration-300" 
+                            />
                         </Link>
                     </div>
 
-                    {/* --- 2. Search Bar Component (Desktop) --- */}
-                    <SearchBar />
+                    {/* --- اليمين: الأيقونات والتحكم --- */}
+                    <div className="flex items-center gap-1.5 sm:gap-5 md:gap-8">
+                        
+                        {/* زر البحث */}
+                        <button 
+                            className={`cursor-pointer p-2 rounded-xl transition-all text-slate-900 ${
+                                isScrolled ? 'hover:bg-gray-100/70' : 'hover:bg-slate-900/5'
+                            }`} 
+                            onClick={() => setIsSearchOpen(true)}
+                        >
+                            <Search className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                        </button>
 
-                    {/* --- 3. Right Section --- */}
-                    <div className="flex items-center space-x-2 md:space-x-8">
-                        {/* Desktop Links */}
-                        <div className="hidden lg:flex items-center space-x-6 text-sm font-bold text-gray-700">
-                            <Link to="/home" className="hover:text-blue-600 transition-colors">Home</Link>
-                            <Link to="/components" className="hover:text-blue-600 transition-colors">Components</Link>
-                            <Link to="/about" className="hover:text-blue-600 transition-colors text-nowrap">About Us</Link>
-                            <Link to="/contact" className="hover:text-blue-600 transition-colors text-nowrap">Contact Us</Link>
-                        </div>
+                        {/* زر المفضلة المطور */}
+                        <button 
+                            className={`relative cursor-pointer p-2 rounded-xl transition-all text-slate-900 ${
+                                isScrolled ? 'hover:bg-gray-100/70' : 'hover:bg-slate-900/5'
+                            }`}
+                            onClick={() => navigate('/favorites')}
+                        >
+                            <Heart className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                            
+                            {/* 🚀 النقطة الحمراء الحية بتأثير نبض (Ping Animation) المؤمّنة بالـ Optional Chaining */}
+                            {favoriteIds?.length > 0 && (
+                                <span className="absolute top-2 right-2 flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                            )}
+                        </button>
 
-                        <div className="flex items-center space-x-1 md:space-x-4 border-l pl-2 md:pl-8 border-gray-200 relative">
-                            {/* Heart Icon */}
-                            <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all group cursor-pointer">
-                                <Heart size={20} className="md:w-[22px] group-hover:text-red-500 transition-colors" />
-                                <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full font-bold">3</span>
-                            </button>
-
-                            {/* User Button */}
+                        {/* أيقونة المستخدم والقائمة المنسدلة */}
+                        <div className="relative">
                             <button 
-                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
-                                className="flex items-center gap-1.5 p-1.5 md:p-2 text-gray-600 hover:bg-gray-50 rounded-xl transition-all border border-transparent hover:border-gray-100 cursor-pointer group"
+                                className={`flex items-center gap-0.5 transition-all p-2 rounded-xl cursor-pointer group text-slate-900 ${
+                                    isScrolled ? 'hover:bg-gray-100/70' : 'hover:bg-slate-900/5'
+                                }`}
+                                onClick={() => user ? setIsUserDropdownOpen(!isUserDropdownOpen) : navigate('/login')}
                             >
-                                <div className="p-1 rounded-lg text-black group-hover:text-blue-600 transition-colors">
-                                    <User size={18} />
-                                </div>
-                                <motion.div
-                                    animate={{ rotate: isUserMenuOpen ? 180 : 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <ChevronDown size={14} className="text-gray-400" />
-                                </motion.div>
+                                <User className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                                {user && (
+                                    <ChevronDown 
+                                        size={12} 
+                                        className="transition-transform duration-300 ease-in-out text-slate-400 group-hover:text-slate-900 hidden sm:block" 
+                                    />
+                                )}
                             </button>
 
-                            {/* User Dropdown Menu */}
                             <AnimatePresence>
-                                {isUserMenuOpen && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="absolute right-0 top-16 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 w-52 z-50 overflow-hidden"
-                                    >
-                                        <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/50 mb-1">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Account</p>
-                                            <p className="text-sm font-black text-gray-900 truncate">
-                                                {userData ? `${userData.firstName} ${userData.lastName}` : 'Guest User'}
-                                            </p>
-                                        </div>
-                                        <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer">Profile</Link>
-                                        <Link to="/settings" onClick={() => setIsUserMenuOpen(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer">Settings</Link>
-                                        <button onClick={handlelogout} className="w-full text-left px-4 py-2.5 text-sm text-red-600 font-bold hover:bg-red-50 mt-1 transition-colors border-t border-gray-50 cursor-pointer">Logout</button>
-                                    </motion.div>
+                                {isUserDropdownOpen && user && (
+                                    <UserDropdown 
+                                        user={user} 
+                                        onClose={() => setIsUserDropdownOpen(false)} 
+                                        onLogout={handleLogout} 
+                                    />
                                 )}
                             </AnimatePresence>
-
-                            {/* Mobile Menu Toggle */}
-                            <button 
-                                className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-full"
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            >
-                                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                            </button>
                         </div>
+
+                        {/* 🚀 زر السلة المطور والمؤمّن بالكامل ضد اختفاء الأرقام */}
+                        <Link 
+                            to="/cart"
+                            className={`relative cursor-pointer p-2 rounded-xl transition-all text-slate-900 ${
+                                isScrolled ? 'hover:bg-gray-100/70' : 'hover:bg-slate-900/5'
+                            }`}
+                        >
+                            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                            
+                            {/* يعرض الرقم لو السلة فيها منتجات أكبر من صفر */}
+                            {currentCartCount > 0 && (
+                                <span className="absolute top-0.5 right-0.5 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-red-700 text-[9px] sm:text-[10px] font-black text-white border border-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] select-none transition-all duration-300 animate-in fade-in zoom-in-75">
+                                    {currentCartCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
+
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
+            {/* --- المكونات المنبثقة (Popups & Sidebars) --- */}
             <AnimatePresence>
-                {isMenuOpen && (
-                    <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="lg:hidden bg-white border-t border-gray-100 overflow-hidden shadow-xl absolute w-full left-0 z-40"
-                    >
-                        <div className="p-6 space-y-6">
-                            {/* تم إصلاح سطر البحث هنا للتأكد من استدعاء Search بشكل صحيح */}
-                            <div className="relative w-full">
-                                <input 
-                                    type="text"
-                                    placeholder="Search..."
-                                    className="w-full bg-gray-100 rounded-xl py-3 pl-10 pr-4 outline-none"
-                                />
-                                <div className="absolute left-3 top-3.5 text-gray-400">
-                                    <Search size={18} />
-                                </div>
-                            </div>
-                            <div className="flex flex-col space-y-4 font-bold text-gray-800 text-lg">
-                                <Link to="/home" onClick={() => setIsMenuOpen(false)}>Home</Link>
-                                <Link to="/components" onClick={() => setIsMenuOpen(false)}>Components</Link>
-                                <Link to="/about" onClick={() => setIsMenuOpen(false)}>About Us</Link>
-                                <Link to="/contact" onClick={() => setIsMenuOpen(false)}>Contact Us</Link>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
+                {isSearchOpen && <SearchPopup onClose={() => setIsSearchOpen(false)} />}
+                {isMenuOpen && <NavMenu onClose={() => setIsMenuOpen(false)} />}
             </AnimatePresence>
         </nav>
     );
